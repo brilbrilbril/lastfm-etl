@@ -1,0 +1,16 @@
+models:
+  - name: listening_depth
+    columns:
+      - name: artist_name
+        tests:
+          - not_null
+          - unique
+      - name: album_count
+        tests:
+          - not_null
+
+  - name: duration_vs_popularity
+    columns:
+      - name: duration_category
+        tests:
+          - not_null

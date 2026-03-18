@@ -1,0 +1,16 @@
+version: '2'
+
+models:
+  - name: stg_pg__toptracks
+    description: User top tracks
+    columns:
+      - name: title
+        description: tracks title
+        data_tests:
+          - not_null
+      - name: artist
+        description: artist name that sang the track
+      - name: duration
+        description: track durations
+      - name: play_count
+        description: track play count by user 

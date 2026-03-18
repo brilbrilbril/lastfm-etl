@@ -1,0 +1,105 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-airflow-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    ports:
+      - "5432:5432"
+    networks:
+      - pipeline-network
+
+  airflow:
+    build: .
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      LASTFM_API_KEY: ${LASTFM_API_KEY}
+      LASTFM_ACCOUNT_NAME: ${LASTFM_ACCOUNT_NAME} 
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow:/opt/airflow
+      - ./shared_data:/opt/shared_data
+      - ./dbt:/opt/dbt
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      bash -c "rm -f /opt/airflow/airflow-webserver.pid && airflow standalone"
+    networks:
+      - pipeline-network
+
+  postgres-data:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: lastfm
+      POSTGRES_PASSWORD: lastfm
+      POSTGRES_DB: lastfm
+    volumes:
+      - postgres-data-volume:/var/lib/postgresql/data
+    restart: always
+    ports:
+      - "5433:5432"
+    networks:
+      - pipeline-network
+
+  # postgres-metabase:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_USER: metabase
+  #     POSTGRES_PASSWORD: metabase
+  #     POSTGRES_DB: metabase
+  #   volumes:
+  #     - postgres-metabase-volume:/var/lib/postgresql/data
+  #   restart: always
+  #   ports:
+  #     - "5434:5432"
+  #   networks:
+  #     - pipeline-network
+
+  # metabase:
+  #   image: metabase/metabase:latest
+  #   container_name: metabase
+  #   hostname: metabase
+  #   volumes:
+  #     - /dev/urandom:/dev/random:ro
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     MB_DB_TYPE: postgres
+  #     MB_DB_DBNAME: metabase
+  #     MB_DB_PORT: 5432
+  #     MB_DB_USER: metabase
+  #     MB_DB_PASS: metabase
+  #     MB_DB_HOST: postgres-metabase
+  #   depends_on:
+  #     - postgres-metabase
+  #     - postgres-data
+  #   healthcheck:
+  #     test: curl --fail -I http://localhost:3000/api/health || exit 1
+  #     interval: 15s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - pipeline-network
+
+volumes:
+  postgres-airflow-volume:
+  postgres-data-volume:
+  # postgres-metabase-volume:
+
+networks:
+  pipeline-network:
+    driver: bridge

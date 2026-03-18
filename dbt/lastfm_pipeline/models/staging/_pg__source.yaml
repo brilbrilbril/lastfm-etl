@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: pg
+    database: pg
+    schema: public
+    tables:
+      - name: toptracks
+      - name: topalbums
+      - name: topartists
+      # - name: toptags
+      - name: artisttags
